@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id                  String   @id @default(cuid())
+  plateNumber         String   @unique //رقم اللوحة
+  brand               String 
+  model               String
+  year                Int
+  color               String
+  engineType          String //نوع المحرك
+  vin                 String   @unique //رقم الهيكل
+  insuranceExpiry     DateTime //تاريخ انتهاء التأمين
+  registrationExpiry  DateTime //تاريخ انتهاء التسجيل
+  status              VehicleStatus @default(ACTIVE) 
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  ownerships    VehicleOwnership[] //علاقات الملكية
+  violations    Violation[] //علاقات المخالفات
+  maintenances  Maintenance[] //علاقات الصيانة
+  theftReports  TheftReport[] //علاقات البلاغات السرقة
+}
+
+// نموذج المالك
+model Owner {
+  id         String   @id @default(cuid())
+  name       String
+  phone      String
+  nationalId String   @unique //رقم الهوية الوطنية
+  address    String
+  createdAt  DateTime @default(now())
+
+  ownerships VehicleOwnership[] //علاقات الملكية
+}
+
+model VehicleOwnership {
+  id        String   @id @default(cuid())
+  vehicleId String 
+  ownerId   String
+  startDate DateTime //تاريخ بداية الملكية
+  endDate   DateTime? //تاريخ نهاية الملكية (اختياري)
+  isCurrent Boolean  @default(false) //هل هو المالك الحالي؟
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  owner   Owner   @relation(fields: [ownerId], references: [id])
+}
+
+// نموذج المخالفات
+model Violation {
+  id        String   @id @default(cuid())
+  vehicleId String //رقم اللوحة
+  type      String
+  amount    Float //قيمة المخالفة
+  date      DateTime
+  location  String //مكان المخالفة
+  isPaid    Boolean  @default(false) //هل تم دفع المخالفة؟
+  createdAt DateTime @default(now()) 
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id]) //علاقة المخالفة بالسيارة
+}
+
+// نموذج الصيانة
+model Maintenance {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  type        String
+  description String
+  date        DateTime
+  cost        Float
+  workshop    String
+  createdAt   DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+}
+
+// نموذج بلاغات السرقة
+model TheftReport {
+  id            String      @id @default(cuid())
+  vehicleId     String
+  reporterName  String
+  reporterPhone String
+  stealDate     DateTime
+  location      String
+  details       String?
+  status        TheftStatus @default(PENDING)
+  createdAt     DateTime    @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+}
+
+
+model Admin {
+  id        String   @id @default(cuid())  //معرف فريد لكل مسؤول
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) //تاريخ إنشاء الحساب
+}
+
+
+//حالات السيارة
+enum VehicleStatus {
+  ACTIVE 
+  STOLEN //سرقة
+  EXPIRED //انتهاء التسجيل أو التأمين
+}
+
+// حالات بلاغات السرقة
+
+enum TheftStatus {
+  PENDING //قيد الانتظار
+  CONFIRMED //تم تأكيد السرقة
+  REJECTED //تم رفض البلاغ
+}
