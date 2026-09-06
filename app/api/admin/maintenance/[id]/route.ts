@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth';
 
 // GET - جلب تصليح واحد
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const { id } = await params;
 
     const maintenance = await prisma.maintenance.findUnique({
@@ -45,6 +49,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const { id } = await params;
     const body = await request.json();
     const { type, description, date, cost, workshop } = body;
@@ -99,6 +106,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const { id } = await params;
 
     const existing = await prisma.maintenance.findUnique({

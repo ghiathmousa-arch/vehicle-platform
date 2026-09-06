@@ -1,0 +1,15 @@
+import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/auth"
+
+export async function GET() {
+  const { session, response } = await requireAdmin()
+  if (response) return response
+
+  return NextResponse.json({
+    admin: {
+      id: session.adminId,
+      name: session.name,
+      email: session.email,
+    },
+  })
+}

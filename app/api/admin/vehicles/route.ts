@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth';
 
 // GET - جلب كل المركبات
 export async function GET() {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const vehicles = await prisma.vehicle.findMany({
       include: {
         ownerships: {
@@ -33,6 +37,9 @@ export async function GET() {
 // POST - إنشاء مركبة جديدة
 export async function POST(request: Request) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const body = await request.json();
     const {
       plateNumber,

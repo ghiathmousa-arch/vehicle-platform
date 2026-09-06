@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { createSession } from "@/lib/session"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: Request) {
@@ -37,7 +38,13 @@ export async function POST(request: Request) {
       )
     }
 
-    // 4. نجاح! (بدون JWT لهلأ --- بس نرجع بيانات)
+    // 4. إنشاء جلسة موقّعة ومخزّنة بكوكي httpOnly
+    await createSession({
+      adminId: admin.id,
+      name: admin.name,
+      email: admin.email,
+    })
+
     return NextResponse.json(
       {
         message: "تم تسجيل الدخول بنجاح",

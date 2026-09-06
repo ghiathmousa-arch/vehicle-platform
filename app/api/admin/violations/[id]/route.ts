@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth';
 
 // GET - جلب مخالفة واحدة
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const { id } = await params;
 
     const violation = await prisma.violation.findUnique({
@@ -45,6 +49,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const { id } = await params;
     const body = await request.json();
     const { type, amount, date, location, isPaid } = body;
@@ -98,6 +105,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const { id } = await params;
 
     const existing = await prisma.violation.findUnique({

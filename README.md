@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# منصة إدارة بيانات المركبات
 
-## Getting Started
+منصة عربية متكاملة (RTL) لإدارة سجلات المركبات، تضم **بوابة استعلام عامة** يبحث فيها المواطن عن أي مركبة برقم اللوحة، و**لوحة تحكم إدارية** كاملة للمشرفين.
 
-First, run the development server:
+## التقنيات
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Next.js 16** (App Router) · **React 19** · **TypeScript** · **PostgreSQL** · **Prisma ORM** · **Tailwind CSS 4** · **Recharts** · **jose (JWT)** · **bcrypt**
+
+## المميزات
+
+### البوابة العامة
+- بحث مرن عن المركبات برقم اللوحة — يفصل الأرقام عن الحروف العربية ويطابقهما بأي ترتيب
+- عرض الملف الكامل للمركبة: البيانات الفنية، تاريخ الملكية، المخالفات، سجل الصيانة، حالة البلاغات
+- نموذج الإبلاغ عن سرقة مركبة
+- وضع ليلي / نهاري
+
+### لوحة التحكم
+- مصادقة آمنة: جلسات JWT موقّعة داخل كوكي `httpOnly` + حماية مركزية عبر `proxy.ts`
+- لوحة إحصائيات مع رسوم بيانية
+- إدارة CRUD كاملة لـ 5 أقسام: المركبات · المخالفات · الصيانة · المُلّاك · بلاغات السرقة
+
+## نموذج البيانات
+
+```
+Vehicle ──┬── VehicleOwnership ── Owner   (تاريخ ملكية كامل بتواريخ بداية/نهاية)
+          ├── Violation                   (المخالفات وحالة السداد)
+          ├── Maintenance                 (سجل الصيانة والتكاليف)
+          └── TheftReport                 (بلاغات السرقة وحالتها)
+Admin                                     (حسابات المشرفين)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## التشغيل محلياً
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 1. تثبيت الاعتماديات
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 2. إعداد متغيرات البيئة
+cp .env.example .env
+# ثم عدّل DATABASE_URL وولّد SESSION_SECRET بالأمر:
+#   openssl rand -base64 32
 
-## Learn More
+# 3. تهيئة قاعدة البيانات
+npm run db:migrate
+npm run db:seed
 
-To learn more about Next.js, take a look at the following resources:
+# 4. التشغيل
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+الموقع على `http://localhost:3000` · لوحة التحكم على `/admin/login`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## متغيرات البيئة
 
-## Deploy on Vercel
+| المتغير | الوصف |
+|---|---|
+| `DATABASE_URL` | رابط PostgreSQL (استخدم الرابط الـ pooled عند النشر على Vercel) |
+| `SESSION_SECRET` | مفتاح توقيع الجلسات — 32 بايت عشوائي على الأقل |
+| `SEED_ADMIN_EMAIL` | بريد المشرف الأولي (للـ seed فقط) |
+| `SEED_ADMIN_PASSWORD` | كلمة مرور المشرف الأولية (للـ seed فقط) |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## بنية المشروع
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+  page.tsx                 الصفحة الرئيسية
+  vehicle/[plate]/         نتيجة الاستعلام العام
+  report-theft/            الإبلاغ عن سرقة
+  admin/                   لوحة التحكم (22 واجهة)
+  api/                     REST API
+components/                مكوّنات واجهة قابلة لإعادة الاستخدام
+lib/
+  prisma.ts                عميل Prisma (singleton)
+  session.ts               إنشاء وتشفير الجلسات
+  auth.ts                  التحقق من الصلاحيات (DAL)
+proxy.ts                   حماية مسارات /admin
+prisma/                    المخطط والـ migrations وبيانات الاختبار
+```
+
+## الأمان
+
+- كلمات المرور مشفّرة بـ bcrypt
+- جلسات JWT موقّعة (HS256) داخل كوكي `httpOnly` + `secure` + `sameSite=lax`
+- **كل** endpoint إداري يتحقق من الجلسة عبر `requireAdmin()` — الفحص في `proxy.ts` مبدئي فقط حسب توصية Next.js

@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth';
 
 // GET - جلب كل البلاغات
 export async function GET() {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const reports = await prisma.theftReport.findMany({
       include: {
         vehicle: {
@@ -32,6 +36,9 @@ export async function GET() {
 // POST - إنشاء بلاغ جديد
 export async function POST(request: Request) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const body = await request.json();
     const {
       plateNumber,

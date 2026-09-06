@@ -1,11 +1,27 @@
 // app/components/admin/Navbar.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, Bell, ChevronDown, LogOut, User } from 'lucide-react';
 
 export default function Navbar() {
+  const router = useRouter();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [admin, setAdmin] = useState<{ name: string; email: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setAdmin(data.admin))
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    router.push('/admin/login');
+    router.refresh();
+  };
 
   return (
     <header
@@ -72,10 +88,10 @@ export default function Navbar() {
             </div>
             <div className="text-right hidden sm:block">
               <p className="text-sm font-semibold leading-tight" style={{ color: '#0f172a' }}>
-                المسير العام
+                {admin?.name ?? '...'}
               </p>
               <p className="text-xs leading-tight" style={{ color: '#64748b' }}>
-                مشرف
+                {admin?.email ?? 'مشرف'}
               </p>
             </div>
             <ChevronDown
@@ -109,6 +125,7 @@ export default function Navbar() {
                 </button>
                 <div className="border-t border-gray-100 my-1" />
                 <button
+                  onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm transition text-right"
                   style={{ color: '#dc2626' }}
                   onMouseEnter={(e) => {

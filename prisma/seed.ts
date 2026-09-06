@@ -14,13 +14,15 @@ async function main() {
   await prisma.owner.deleteMany()
 
   // ✅ تشفير كلمة السر
-  const hashedPassword = await bcrypt.hash('admin123', 10)
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123'
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@vehicles.gov.sa'
+  const hashedPassword = await bcrypt.hash(adminPassword, 10)
 
   // الأدمن
   const admin = await prisma.admin.create({
     data: {
       name: 'مدير النظام',
-      email: 'admin@vehicles.gov.sa',
+      email: adminEmail,
       password: hashedPassword,
     },
   })

@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { requireAdmin } from '@/lib/auth';
 
 // GET - جلب كل المستخدمين
 export async function GET() {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const users = await prisma.admin.findMany({
       select: {
         id: true,
@@ -30,6 +34,9 @@ export async function GET() {
 // POST - إنشاء مستخدم جديد
 export async function POST(request: Request) {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const body = await request.json();
     const { name, email, password } = body;
 

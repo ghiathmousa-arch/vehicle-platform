@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const { response: authError } = await requireAdmin();
+    if (authError) return authError;
+
     const [vehiclesCount, usersCount, pendingReports, totalViolations] = await Promise.all([
       prisma.vehicle.count(),
       prisma.owner.count(),
