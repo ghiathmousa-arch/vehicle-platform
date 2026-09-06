@@ -9,12 +9,28 @@ import ExportButton from '@/components/admin/ExportButton';
 import { Users, FileText, AlertTriangle, Car } from 'lucide-react';
 
 // ✅ حط الـ type هون برّا الكومبوننت
+type MonthPoint = { month: string; value: number };
+
 type StatsData = {
   vehicles: number;
   users: number;
   pendingReports: number;
   violations: number;
+  year: number;
+  monthly: MonthPoint[];
+  trends: {
+    vehicles: number | null;
+    users: number | null;
+    violations: number | null;
+    pendingReports: number | null;
+  };
 };
+
+// نص نسبة التغيّر مقارنة بالشهر الماضي — يختفي إن لم تتوفر بيانات للمقارنة
+function changeLabel(v: number | null | undefined) {
+  if (v === null || v === undefined) return undefined;
+  return `${v > 0 ? '+' : ''}${v}%`;
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -57,8 +73,8 @@ export default function AdminDashboard() {
               icon={<Car className="w-6 h-6" />}
               label="إجمالي المركبات"
               value={stats?.vehicles ?? 0}
-              change="+5.2%"
-              changeType="up"
+              change={changeLabel(stats?.trends.vehicles)}
+              changeType={(stats?.trends.vehicles ?? 0) >= 0 ? 'up' : 'down'}
               iconBg="#ecfeff"
               iconColor="#06b6d4"
               loading={loading}
@@ -67,8 +83,8 @@ export default function AdminDashboard() {
               icon={<AlertTriangle className="w-6 h-6" />}
               label="بلاغات قيد المراجعة"
               value={stats?.pendingReports ?? 0}
-              change="-2.1%"
-              changeType="down"
+              change={changeLabel(stats?.trends.pendingReports)}
+              changeType={(stats?.trends.pendingReports ?? 0) >= 0 ? 'up' : 'down'}
               iconBg="#fef2f2"
               iconColor="#ef4444"
               loading={loading}
@@ -77,8 +93,8 @@ export default function AdminDashboard() {
               icon={<FileText className="w-6 h-6" />}
               label="المخالفات المسجلة"
               value={stats?.violations ?? 0}
-              change="+8.4%"
-              changeType="up"
+              change={changeLabel(stats?.trends.violations)}
+              changeType={(stats?.trends.violations ?? 0) >= 0 ? 'up' : 'down'}
               iconBg="#ecfeff"
               iconColor="#06b6d4"
               loading={loading}
@@ -87,15 +103,19 @@ export default function AdminDashboard() {
               icon={<Users className="w-6 h-6" />}
               label="المستخدمين النشطين"
               value={stats?.users ?? 0}
-              change="+12.3%"
-              changeType="up"
+              change={changeLabel(stats?.trends.users)}
+              changeType={(stats?.trends.users ?? 0) >= 0 ? 'up' : 'down'}
               iconBg="#ecfeff"
               iconColor="#06b6d4"
               loading={loading}
             />
           </div>
 
-          <MonthlyChart />
+          <MonthlyChart
+            data={stats?.monthly ?? []}
+            year={stats?.year}
+            loading={loading}
+          />
         </main>
       </div>
     </div>

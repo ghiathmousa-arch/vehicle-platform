@@ -17,6 +17,15 @@ export default function Navbar() {
       .catch(() => {});
   }, []);
 
+  const [query, setQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    router.push(`/admin/vehicles?q=${encodeURIComponent(q)}`);
+  };
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin/login');
@@ -38,18 +47,23 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-3">
-        <div
+        <form
+          onSubmit={handleSearch}
           className="hidden md:flex items-center rounded-xl px-4 py-2 gap-2"
           style={{ backgroundColor: '#f1f5f9' }}
         >
-          <Search className="w-4 h-4" style={{ color: '#94a3b8' }} />
+          <button type="submit" aria-label="بحث" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
+            <Search className="w-4 h-4" style={{ color: '#94a3b8' }} />
+          </button>
           <input
-            type="text"
-            placeholder="بحث..."
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ابحث عن مركبة..."
             className="bg-transparent border-none outline-none text-sm placeholder-gray-400"
             style={{ width: '12rem', color: '#334155' }}
           />
-        </div>
+        </form>
 
         <button
           className="relative p-2 rounded-xl transition"

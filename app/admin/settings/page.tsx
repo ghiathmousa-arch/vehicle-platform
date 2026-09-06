@@ -37,6 +37,8 @@ export default function SettingsPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [settings, setSettings] = useState < AppSettings > ({
     siteName: 'نظام إدارة المركبات',
     siteDescription: 'نظام متكامل لإدارة المركبات والمخالفات والبلاغات',
@@ -48,44 +50,54 @@ export default function SettingsPage() {
     language: 'ar',
   });
 
-  // تحميل الإعدادات من localStorage
+  // تحميل الإعدادات من قاعدة البيانات
   useEffect(() => {
-    const saved = localStorage.getItem('app-settings');
-    if (saved) {
-      try {
-        setSettings(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error parsing settings:', e);
-      }
-    }
+    fetch('/api/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data?.settings && setSettings(data.settings))
+      .catch((e) => console.error('Error loading settings:', e))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    localStorage.setItem('app-settings', JSON.stringify(settings));
-    setTimeout(() => {
-      setSaving(false);
+    setError('');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'تعذّر الحفظ');
+
+      setSettings(data.settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    }, 500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'حدث خطأ أثناء الحفظ');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!confirm('هل أنت متأكد من إعادة تعيين جميع الإعدادات؟')) return;
-    const defaultSettings: AppSettings = {
-      siteName: 'نظام إدارة المركبات',
-      siteDescription: 'نظام متكامل لإدارة المركبات والمخالفات والبلاغات',
-      itemsPerPage: 10,
-      currency: 'ل.س',
-      dateFormat: 'ar-SA',
-      enableNotifications: true,
-      darkMode: false,
-      language: 'ar',
-    };
-    setSettings(defaultSettings);
-    localStorage.setItem('app-settings', JSON.stringify(defaultSettings));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch('/api/settings', { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'تعذّرت إعادة التعيين');
+
+      setSettings(data.settings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'حدث خطأ أثناء إعادة التعيين');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputClass = "w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition";
@@ -121,6 +133,16 @@ export default function SettingsPage() {
                 <CheckCircle className="w-5 h-5" style={{ color: '#22c55e' }} />
                 <p className="text-sm font-medium" style={{ color: '#166534' }}>
                   تم حفظ الإعدادات بنجاح!
+                </p>
+              </div>
+            )}
+
+            {/* رسالة خطأ */}
+            {error && (
+              <div className="rounded-2xl border p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
+                <AlertTriangle className="w-5 h-5" style={{ color: '#ef4444' }} />
+                <p className="text-sm font-medium" style={{ color: '#b91c1c' }}>
+                  {error}
                 </p>
               </div>
             )}

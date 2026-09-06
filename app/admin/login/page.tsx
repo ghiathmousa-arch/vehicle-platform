@@ -194,13 +194,6 @@ export default function AdminLogin() {
             </div>
           </div>
 
-          {/* نسيت كلمة المرور */}
-          <div style={{ textAlign: 'right' }}>
-            <a href="/admin/forgot-password" style={{ fontSize: '0.875rem', fontWeight: '500', color: '#06b6d4', textDecoration: 'none' }}>
-              نسيت كلمة المرور؟
-            </a>
-          </div>
-
           {/* زر تسجيل الدخول */}
           <button
             type="submit"

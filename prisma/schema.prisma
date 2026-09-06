@@ -119,3 +119,9 @@ enum TheftStatus {
   CONFIRMED //تم تأكيد السرقة
   REJECTED //تم رفض البلاغ
 }
+// إعدادات النظام — مخزن مفتاح/قيمة يحفظ الإعدادات فعلياً بدل المتصفح
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

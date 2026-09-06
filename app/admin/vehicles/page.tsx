@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/admin/Sidebar';
 import Navbar from '@/components/admin/Navbar';
 import { Car, Plus, Edit, Trash2, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -26,17 +26,24 @@ interface Vehicle {
   };
 }
 
-export default function VehiclesPage() {
+function VehiclesPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('q') ?? '');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   useEffect(() => {
     fetchVehicles();
   }, []);
+
+  // مزامنة البحث مع الرابط عند القدوم من بحث الشريط العلوي
+  useEffect(() => {
+    setSearch(searchParams.get('q') ?? '');
+    setCurrentPage(1);
+  }, [searchParams]);
 
   async function fetchVehicles() {
     try {
@@ -275,5 +282,13 @@ export default function VehiclesPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function VehiclesPage() {
+  return (
+    <Suspense fallback={null}>
+      <VehiclesPageContent />
+    </Suspense>
   );
 }
